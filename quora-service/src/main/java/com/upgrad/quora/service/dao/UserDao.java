@@ -8,6 +8,10 @@ import javax.persistence.EntityManager;
 import javax.persistence.NoResultException;
 import javax.persistence.PersistenceContext;
 
+/**
+ * This class contain all Data access related operations for User table
+ */
+
 @Repository
 public class UserDao {
 

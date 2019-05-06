@@ -20,12 +20,8 @@ public class RestExceptionHandler {
     }
     @ExceptionHandler(AuthorizationFailedException.class)
     public ResponseEntity<ErrorResponse> authorizationFailedException(AuthorizationFailedException exe, WebRequest request){
-        HttpStatus status = HttpStatus.UNAUTHORIZED;
-        if(exe.getCode().equals("ATHR-003")) {
-            status = HttpStatus.FORBIDDEN;
-        }
         return new ResponseEntity<ErrorResponse>(
-                new ErrorResponse().code(exe.getCode()).message(exe.getErrorMessage()), status
+                new ErrorResponse().code(exe.getCode()).message(exe.getErrorMessage()), HttpStatus.FORBIDDEN
         );
     }
 }
