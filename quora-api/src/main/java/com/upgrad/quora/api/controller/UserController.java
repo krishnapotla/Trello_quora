@@ -80,3 +80,17 @@ public class UserController {
             return new ResponseEntity<>("You have logged out successfully!", HttpStatus.OK);
         }
     }
+    @GetMapping("/api/user/userProfile/{userId}")
+    public ResponseEntity<?> getUserProfile(@PathVariable(value = "userId") int userId, HttpSession httpSession) {
+        if (httpSession.getAttribute("currUser") == null) {
+            return new ResponseEntity<>("Please Login first to access this endpoint", HttpStatus.UNAUTHORIZED);
+        } else {
+            User user = (User) httpSession.getAttribute("currUser");
+            UserProfile userProfile = userService.getUserProfile(user.getId());
+            if (userProfile == null) {
+                return new ResponseEntity<>("User Profile not found!", HttpStatus.NOT_FOUND);
+            } else {
+                return new ResponseEntity<>(userProfile, HttpStatus.OK);
+            }
+        }
+    }
