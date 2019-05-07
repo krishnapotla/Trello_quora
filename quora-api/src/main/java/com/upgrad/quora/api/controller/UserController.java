@@ -49,3 +49,24 @@ public class UserController {
         userService.addUser(username, sha256hex, email, firstName, lastName, aboutMe, dob, phoneNumber, country);
         return new ResponseEntity<>(username + " successfully registered", HttpStatus.OK);
     }
+    
+    @PostMapping("/api/user/login")
+    public ResponseEntity<?> userSignIn(@RequestParam(value = "userName") String username,
+                                        @RequestParam(value = "password") String password,
+                                        HttpSession httpSession) {
+        String sha256hex = Hashing.sha256()
+                .hashString(password, Charsets.US_ASCII)
+                .toString();
+        String passwordFromDatabase = userService.getPasswordByUsername(username);
+        if (!passwordFromDatabase.equalsIgnoreCase(sha256hex)) {
+            return new ResponseEntity<>("Invalid Credentials", HttpStatus.UNAUTHORIZED);
+        } else if (userService.getRoleByUsername(username).equalsIgnoreCase("admin")) {
+            User user = userService.findUserByUsername(username);
+            httpSession.setAttribute("currUser", user);
+            return new ResponseEntity<>("You have logged in as admin!", HttpStatus.OK);
+        } else {
+            User user = userService.findUserByUsername(username);
+            httpSession.setAttribute("currUser", user);
+            return new ResponseEntity<>("You have logged in successfully!", HttpStatus.OK);
+        }
+    }
