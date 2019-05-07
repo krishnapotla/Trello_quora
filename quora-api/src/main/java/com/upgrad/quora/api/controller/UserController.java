@@ -94,5 +94,25 @@ public class UserController {
             }
         }
     }
+        @GetMapping("/api/user/notification/new")
+    public ResponseEntity<?> getNewNotifications(HttpSession httpSession) {
+        if (httpSession.getAttribute("currUser") == null) {
+            return new ResponseEntity<>("Please Login first to access this endpoint!", HttpStatus.UNAUTHORIZED);
+        } else {
+            User user = (User) httpSession.getAttribute("currUser");
+            return new ResponseEntity<>(notificationService.getNewNotifications(user.getId()), HttpStatus.OK);
+        }
+    }
+
+    @GetMapping("/api/user/notification/all")
+    public ResponseEntity<?> getAllNotifications(HttpSession httpSession) {
+        if (httpSession.getAttribute("currUser") == null) {
+            return new ResponseEntity<>("Please Login first to access this endpoint!", HttpStatus.UNAUTHORIZED);
+        } else {
+            User user = (User) httpSession.getAttribute("currUser");
+            return new ResponseEntity<>(notificationService.getAllNotifications(user.getId()), HttpStatus.OK);
+        }
+    }
+}
     
     
