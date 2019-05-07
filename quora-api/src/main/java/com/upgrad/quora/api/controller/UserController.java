@@ -70,3 +70,13 @@ public class UserController {
             return new ResponseEntity<>("You have logged in successfully!", HttpStatus.OK);
         }
     }
+    
+    @PostMapping("/api/user/logout")
+    public ResponseEntity<?> userSignOut(HttpSession httpSession) {
+        if (httpSession.getAttribute("currUser") == null) {
+            return new ResponseEntity<>("You are currently not logged in", HttpStatus.UNAUTHORIZED);
+        } else {
+            httpSession.removeAttribute("currUser");
+            return new ResponseEntity<>("You have logged out successfully!", HttpStatus.OK);
+        }
+    }
