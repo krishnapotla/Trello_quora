@@ -1,9 +1,6 @@
 package com.upgrad.quora.api.controller;
 
-import com.upgrad.quora.api.model.QuestionDeleteResponse;
-import com.upgrad.quora.api.model.QuestionDetailsResponse;
-import com.upgrad.quora.api.model.QuestionRequest;
-import com.upgrad.quora.api.model.QuestionResponse;
+import com.upgrad.quora.api.model.*;
 import com.upgrad.quora.service.business.QuestionBusinessService;
 import com.upgrad.quora.service.entity.QuestionEntity;
 import com.upgrad.quora.service.exception.AuthorizationFailedException;
@@ -30,6 +27,14 @@ public class QuestionController {
     @Autowired
     private QuestionBusinessService questionService;
 
+    /**
+     * create a Question
+     *
+     * @param questionRequest
+     * @param accessToken
+     * @return return status
+     * @throws AuthorizationFailedException
+     */
     @RequestMapping(method = RequestMethod.POST, path = "/question/create", consumes = MediaType.APPLICATION_JSON_UTF8_VALUE, produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
     public ResponseEntity<QuestionResponse> createQuestion(final QuestionRequest questionRequest, @RequestHeader("authorization") final String accessToken) throws AuthorizationFailedException {
 
@@ -46,6 +51,13 @@ public class QuestionController {
         return new ResponseEntity<QuestionResponse>(questionResponse, HttpStatus.CREATED);
     }
 
+    /**
+     * Query all questions based on role
+     *
+     * @param accessToken
+     * @return ResponseEntity with list of QuestionDetailsResponse
+     * @throws AuthorizationFailedException
+     */
     @RequestMapping(method = RequestMethod.GET, path = "/question/all", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
     public ResponseEntity<List<QuestionDetailsResponse>> getAllQuestions(@RequestHeader("authorization") final String accessToken) throws AuthorizationFailedException {
         String token = getAccessToken(accessToken);
@@ -55,7 +67,7 @@ public class QuestionController {
         // Create response
         List<QuestionDetailsResponse> allQuestionDetailsResponses = new ArrayList<>();
 
-        allQuestions.forEach( questionEntity -> {
+        allQuestions.forEach(questionEntity -> {
             QuestionDetailsResponse questionDetailsResponse = new QuestionDetailsResponse()
                     .content(questionEntity.getContent())
                     .id(questionEntity.getUuid());
@@ -64,10 +76,31 @@ public class QuestionController {
         // Return response
         return new ResponseEntity<List<QuestionDetailsResponse>>(allQuestionDetailsResponses, HttpStatus.OK);
     }
+    /**
+     * Edit the question
+     * @param  questionEditRequest
+     * @param  questionId
+     * @param  accessToken
+     * @return ResponseEntity with QuestionEditResponse.
+     */
+    @RequestMapping(method = RequestMethod.PUT, path = "/question/edit/{questionId}", consumes = MediaType.APPLICATION_JSON_UTF8_VALUE, produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
+    public ResponseEntity<QuestionEditResponse> editQuestion(final QuestionEditRequest questionEditRequest, @PathVariable("questionId") final String questionId, @RequestHeader("authorization") final String accessToken) throws AuthorizationFailedException, InvalidQuestionException {
+
+        String token = getAccessToken(accessToken);
+
+        // Creating question entity for further update
+        QuestionEntity questionEntity = new QuestionEntity();
+        questionEntity.setContent(questionEditRequest.getContent());
+        questionEntity.setUuid(questionId);
+
+        // Return response with updated question entity
+        QuestionEntity updatedQuestionEntity = questionService.editQuestion(questionEntity, token);
+        QuestionEditResponse questionEditResponse = new QuestionEditResponse().id(updatedQuestionEntity.getUuid()).status("QUESTION EDITED");
+        return new ResponseEntity<QuestionEditResponse>(questionEditResponse, HttpStatus.OK);
+    }
 
     /**
-     *
-     * @param questionId Question Id to delete from Server
+     * @param questionId  Question Id to delete from Server
      * @param accessToken this variable helps to authenticate the user
      * @return ResponseEntity with QuestionDeleteResponse
      * @throws AuthorizationFailedException
@@ -75,7 +108,7 @@ public class QuestionController {
      */
     @RequestMapping(method = RequestMethod.DELETE, path = "/question/delete/{questionId}", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
     public ResponseEntity<QuestionDeleteResponse> deleteQuestion(@PathVariable("questionId") final String questionId,
-                                                             @RequestHeader("authorization") final String accessToken) throws AuthorizationFailedException, InvalidQuestionException {
+                                                                 @RequestHeader("authorization") final String accessToken) throws AuthorizationFailedException, InvalidQuestionException {
         String token = getAccessToken(accessToken);
         questionService.deleteQuestion(questionId, token);
         // Return response
@@ -84,7 +117,8 @@ public class QuestionController {
     }
 
     /**
-     *  User can give only Access token or Bearer <accesstoken> as input.
+     * User can give only Access token or Bearer <accesstoken> as input.
+     *
      * @param accessToken
      * @return token
      */
@@ -95,4 +129,5 @@ public class QuestionController {
         }
         return accessToken;
     }
+
 }

@@ -4,6 +4,7 @@ import com.upgrad.quora.service.dao.QuestionDao;
 import com.upgrad.quora.service.dao.UserDao;
 import com.upgrad.quora.service.entity.QuestionEntity;
 import com.upgrad.quora.service.entity.UserAuthTokenEntity;
+import com.upgrad.quora.service.entity.UserEntity;
 import com.upgrad.quora.service.exception.AuthorizationFailedException;
 import com.upgrad.quora.service.exception.InvalidQuestionException;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,6 +29,29 @@ public class QuestionBusinessService {
 
         questionEntity.setUser(userAuthEntity.getUser());
         return questionDao.createQuestion(questionEntity);
+    }
+    @Transactional(propagation = Propagation.REQUIRED)
+    public QuestionEntity editQuestion(final QuestionEntity questionEntity, final String authorizationToken) throws AuthorizationFailedException, InvalidQuestionException {
+        UserAuthTokenEntity userAuthEntity = userDao.getUserAuthToken(authorizationToken);
+
+        authorizeUser(userAuthEntity);
+
+        // Validate if requested question exist or not
+        QuestionEntity existingQuestionEntity = questionDao.getQuestionById(questionEntity.getUuid());
+        if (existingQuestionEntity == null) {
+            throw new InvalidQuestionException("QUES-001", "Entered question uuid does not exist");
+        }
+        // Validate if current user is the owner of requested question
+        UserEntity currentUser = userAuthEntity.getUser();
+        UserEntity questionOwner = existingQuestionEntity.getUser();
+        if (currentUser.getId() != questionOwner.getId()) {
+            throw new AuthorizationFailedException("ATHR-003", "Only the question owner can edit the question");
+        }
+        questionEntity.setId(existingQuestionEntity.getId());
+        questionEntity.setUser(existingQuestionEntity.getUser());
+        questionEntity.setDate(existingQuestionEntity.getDate());
+
+        return questionDao.updateQuestion(questionEntity);
     }
 
     @Transactional(propagation = Propagation.REQUIRED)
