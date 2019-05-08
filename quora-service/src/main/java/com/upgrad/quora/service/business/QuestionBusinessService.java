@@ -11,6 +11,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+
 @Service
 public class QuestionBusinessService {
     @Autowired
@@ -56,5 +58,11 @@ public class QuestionBusinessService {
         if (userAuthEntity.getLogoutAt() != null) {
             throw new AuthorizationFailedException("ATHR-002", "User is signed out.Sign in first to delete a question");
         }
+    }
+
+    public List<QuestionEntity> getAllQuestions(String token) throws AuthorizationFailedException {
+        UserAuthTokenEntity userAuthEntity = userDao.getUserAuthToken(token);
+        authorizeUser(userAuthEntity);
+        return questionDao.getAllQuestions();
     }
 }

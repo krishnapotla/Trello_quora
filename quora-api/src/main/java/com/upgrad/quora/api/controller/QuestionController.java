@@ -1,6 +1,7 @@
 package com.upgrad.quora.api.controller;
 
 import com.upgrad.quora.api.model.QuestionDeleteResponse;
+import com.upgrad.quora.api.model.QuestionDetailsResponse;
 import com.upgrad.quora.api.model.QuestionRequest;
 import com.upgrad.quora.api.model.QuestionResponse;
 import com.upgrad.quora.service.business.QuestionBusinessService;
@@ -14,6 +15,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.ZonedDateTime;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 /**
@@ -38,9 +41,28 @@ public class QuestionController {
         questionEntity.setDate(ZonedDateTime.now());
 
         // Return response with created question entity
-        final QuestionEntity createdQuestionEntity = questionService.createQuestion(questionEntity, accessToken);
+        final QuestionEntity createdQuestionEntity = questionService.createQuestion(questionEntity, token);
         QuestionResponse questionResponse = new QuestionResponse().id(createdQuestionEntity.getUuid()).status("QUESTION CREATED");
         return new ResponseEntity<QuestionResponse>(questionResponse, HttpStatus.CREATED);
+    }
+
+    @RequestMapping(method = RequestMethod.GET, path = "/question/all", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
+    public ResponseEntity<List<QuestionDetailsResponse>> getAllQuestions(@RequestHeader("authorization") final String accessToken) throws AuthorizationFailedException {
+        String token = getAccessToken(accessToken);
+        // Get all questions
+        List<QuestionEntity> allQuestions = questionService.getAllQuestions(token);
+
+        // Create response
+        List<QuestionDetailsResponse> allQuestionDetailsResponses = new ArrayList<>();
+
+        allQuestions.forEach( questionEntity -> {
+            QuestionDetailsResponse questionDetailsResponse = new QuestionDetailsResponse()
+                    .content(questionEntity.getContent())
+                    .id(questionEntity.getUuid());
+            allQuestionDetailsResponses.add(questionDetailsResponse);
+        });
+        // Return response
+        return new ResponseEntity<List<QuestionDetailsResponse>>(allQuestionDetailsResponses, HttpStatus.OK);
     }
 
     /**
