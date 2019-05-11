@@ -19,6 +19,10 @@ public class UserDao {
     @PersistenceContext
     private EntityManager entityManager;
 
+    public UserEntity createUser(UserEntity userEntity) {
+        entityManager.persist(userEntity);
+        return userEntity;
+    }
 
     public UserEntity getUser(final String userUuid) {
         try {
