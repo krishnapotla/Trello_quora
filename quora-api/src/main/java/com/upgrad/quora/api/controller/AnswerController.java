@@ -1,9 +1,6 @@
 package com.upgrad.quora.api.controller;
 
-import com.upgrad.quora.api.model.AnswerEditRequest;
-import com.upgrad.quora.api.model.AnswerEditResponse;
-import com.upgrad.quora.api.model.AnswerRequest;
-import com.upgrad.quora.api.model.AnswerResponse;
+import com.upgrad.quora.api.model.*;
 import com.upgrad.quora.service.business.AnswerBusinessService;
 import com.upgrad.quora.service.entity.AnswerEntity;
 import com.upgrad.quora.service.exception.AnswerNotFoundException;
@@ -27,6 +24,7 @@ public class AnswerController {
 
     /**
      * create new Answer for a question
+     *
      * @param answerRequest
      * @param questionId
      * @param accessToken
@@ -37,8 +35,7 @@ public class AnswerController {
     @PostMapping(path = "/question/{questionId}/answer/create", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
     public ResponseEntity<AnswerResponse> createAnswer(final AnswerRequest answerRequest,
                                                        @PathVariable("questionId") final String questionId, @RequestHeader("authorization") final String accessToken)
-            throws AuthorizationFailedException, InvalidQuestionException
-    {
+            throws AuthorizationFailedException, InvalidQuestionException {
         String token = getAccessToken(accessToken);
 
         // Create answer entity
@@ -54,6 +51,7 @@ public class AnswerController {
 
     /**
      * edit Answer Content
+     *
      * @param answerEditRequest
      * @param answerId
      * @param accessToken
@@ -65,8 +63,7 @@ public class AnswerController {
             consumes = MediaType.APPLICATION_JSON_UTF8_VALUE, produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
     public ResponseEntity<AnswerEditResponse> editAnswerContent(final AnswerEditRequest answerEditRequest,
                                                                 @PathVariable("answerId") final String answerId, @RequestHeader("authorization") final String accessToken)
-            throws AuthorizationFailedException, AnswerNotFoundException
-    {
+            throws AuthorizationFailedException, AnswerNotFoundException {
 
         String token = getAccessToken(accessToken);
         // Created answer entity for further update
@@ -79,6 +76,30 @@ public class AnswerController {
         AnswerEditResponse answerEditResponse = new AnswerEditResponse().id(updatedAnswerEntity.getUuid()).status("ANSWER EDITED");
         return new ResponseEntity<AnswerEditResponse>(answerEditResponse, HttpStatus.OK);
     }
+
+    /**
+     * delete Answer
+     *
+     * @param answerId
+     * @param accessToken
+     * @return ResponseEntity
+     * @throws AuthorizationFailedException
+     * @throws AnswerNotFoundException
+     */
+    @RequestMapping(method = RequestMethod.DELETE, path = "/answer/delete/{answerId}",
+            produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
+    public ResponseEntity<AnswerDeleteResponse> deleteAnswer(@PathVariable("answerId") final String answerId,
+                                                             @RequestHeader("authorization") final String accessToken) throws AuthorizationFailedException, AnswerNotFoundException {
+        String token = getAccessToken(accessToken);
+
+        // Delete requested answer
+        answerBusinessService.deleteAnswer(answerId, token);
+
+        // Return response
+        AnswerDeleteResponse answerDeleteResponse = new AnswerDeleteResponse().id(answerId).status("ANSWER DELETED");
+        return new ResponseEntity<AnswerDeleteResponse>(answerDeleteResponse, HttpStatus.OK);
+    }
+
     /**
      * User can give only Access token or Bearer <accesstoken> as input.
      *

@@ -54,9 +54,10 @@ public class AnswerBusinessService {
 
         return answerDao.createAnswer(answerEntity);
     }
+
     /**
-     * @param  answerEntity the first {@code AnswerEntity} object to update stored answer
-     * @param  authorization the second {@code String} to check if the access is available.
+     * @param answerEntity  the first {@code AnswerEntity} object to update stored answer
+     * @param authorization the second {@code String} to check if the access is available.
      * @return AnswerEntity object is returned after persisting in the database.
      */
     @Transactional(propagation = Propagation.REQUIRED)
@@ -82,6 +83,26 @@ public class AnswerBusinessService {
         answerEntity.setUser(existingAnswerEntity.getUser());
         answerEntity.setQuestion(existingAnswerEntity.getQuestion());
         return answerDao.editAnswerContent(answerEntity);
+    }
+
+    @Transactional(propagation = Propagation.REQUIRED)
+    public void deleteAnswer(final String answerId, final String authorization) throws AuthorizationFailedException, AnswerNotFoundException {
+        UserAuthTokenEntity userAuthEntity = userDao.getUserAuthToken(authorization);
+        authorizeUser(userAuthEntity, "User is signed out.Sign in first to delete an answer");
+
+        // Validate if requested answer exist or not
+        if (answerDao.getAnswerByUuid(answerId) == null) {
+            throw new AnswerNotFoundException("ANS-001", "Entered answer uuid does not exist");
+        }
+
+        // Validate if current user is the owner of requested answer or the role of user is not nonadmin
+        if (!userAuthEntity.getUser().getUuid().equals(answerDao.getAnswerByUuid(answerId).getUser().getUuid())) {
+            if (userAuthEntity.getUser().getRole().equals("nonadmin")) {
+                throw new AuthorizationFailedException("ATHR-003", "Only the answer owner or admin can delete the answer");
+            }
+        }
+
+        answerDao.userAnswerDelete(answerId);
     }
 
     private void authorizeUser(UserAuthTokenEntity userAuthEntity, final String log_out_ERROR) throws AuthorizationFailedException {
