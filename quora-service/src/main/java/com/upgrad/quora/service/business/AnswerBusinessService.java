@@ -6,6 +6,8 @@ import com.upgrad.quora.service.dao.UserDao;
 import com.upgrad.quora.service.entity.AnswerEntity;
 import com.upgrad.quora.service.entity.QuestionEntity;
 import com.upgrad.quora.service.entity.UserAuthTokenEntity;
+import com.upgrad.quora.service.entity.UserEntity;
+import com.upgrad.quora.service.exception.AnswerNotFoundException;
 import com.upgrad.quora.service.exception.AuthorizationFailedException;
 import com.upgrad.quora.service.exception.InvalidQuestionException;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -37,7 +39,7 @@ public class AnswerBusinessService {
     public AnswerEntity createAnswer(final AnswerEntity answerEntity, final String questionId, final String authorization) throws AuthorizationFailedException, InvalidQuestionException {
         UserAuthTokenEntity userAuthEntity = userDao.getUserAuthToken(authorization);
 
-        authorizeUser(userAuthEntity);
+        authorizeUser(userAuthEntity, "User is signed out.Sign in first to post an answer");
 
         // Validate if requested question exist
         QuestionEntity questionEntity = questionDao.getQuestionById(questionId);
@@ -52,8 +54,37 @@ public class AnswerBusinessService {
 
         return answerDao.createAnswer(answerEntity);
     }
+    /**
+     * @param  answerEntity the first {@code AnswerEntity} object to update stored answer
+     * @param  authorization the second {@code String} to check if the access is available.
+     * @return AnswerEntity object is returned after persisting in the database.
+     */
+    @Transactional(propagation = Propagation.REQUIRED)
+    public AnswerEntity editAnswerContent(final AnswerEntity answerEntity, final String authorization) throws AuthorizationFailedException, AnswerNotFoundException {
+        UserAuthTokenEntity userAuthEntity = userDao.getUserAuthToken(authorization);
+        authorizeUser(userAuthEntity, "User is signed out.Sign in first to edit an answer");
 
-    private void authorizeUser(UserAuthTokenEntity userAuthEntity) throws AuthorizationFailedException {
+        // Validate if requested answer exist or not
+        AnswerEntity existingAnswerEntity = answerDao.getAnswerByUuid(answerEntity.getUuid());
+        if (existingAnswerEntity == null) {
+            throw new AnswerNotFoundException("ANS-001", "Entered answer uuid does not exist");
+        }
+
+        // Validate if current user is the owner of requested answer
+        UserEntity currentUser = userAuthEntity.getUser();
+        UserEntity answerOwner = answerDao.getAnswerByUuid(answerEntity.getUuid()).getUser();
+        if (currentUser.getId() != answerOwner.getId()) {
+            throw new AuthorizationFailedException("ATHR-003", "Only the answer owner can edit the answer");
+        }
+
+        answerEntity.setId(existingAnswerEntity.getId());
+        answerEntity.setDate(existingAnswerEntity.getDate());
+        answerEntity.setUser(existingAnswerEntity.getUser());
+        answerEntity.setQuestion(existingAnswerEntity.getQuestion());
+        return answerDao.editAnswerContent(answerEntity);
+    }
+
+    private void authorizeUser(UserAuthTokenEntity userAuthEntity, final String log_out_ERROR) throws AuthorizationFailedException {
         // Validate if user is signed in or not
         if (userAuthEntity == null) {
             throw new AuthorizationFailedException("ATHR-001", "User has not signed in");
@@ -61,7 +92,7 @@ public class AnswerBusinessService {
 
         // Validate if user has signed out
         if (userAuthEntity.getLogoutAt() != null) {
-            throw new AuthorizationFailedException("ATHR-002", "User is signed out.Sign in first to post an answer");
+            throw new AuthorizationFailedException("ATHR-002", log_out_ERROR);
         }
     }
 }

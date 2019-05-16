@@ -1,9 +1,12 @@
 package com.upgrad.quora.api.controller;
 
+import com.upgrad.quora.api.model.AnswerEditRequest;
+import com.upgrad.quora.api.model.AnswerEditResponse;
 import com.upgrad.quora.api.model.AnswerRequest;
 import com.upgrad.quora.api.model.AnswerResponse;
 import com.upgrad.quora.service.business.AnswerBusinessService;
 import com.upgrad.quora.service.entity.AnswerEntity;
+import com.upgrad.quora.service.exception.AnswerNotFoundException;
 import com.upgrad.quora.service.exception.AuthorizationFailedException;
 import com.upgrad.quora.service.exception.InvalidQuestionException;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,6 +25,15 @@ public class AnswerController {
     @Autowired
     AnswerBusinessService answerBusinessService;
 
+    /**
+     * create new Answer for a question
+     * @param answerRequest
+     * @param questionId
+     * @param accessToken
+     * @return ResponseEntity
+     * @throws AuthorizationFailedException
+     * @throws InvalidQuestionException
+     */
     @PostMapping(path = "/question/{questionId}/answer/create", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
     public ResponseEntity<AnswerResponse> createAnswer(final AnswerRequest answerRequest,
                                                        @PathVariable("questionId") final String questionId, @RequestHeader("authorization") final String accessToken)
@@ -38,6 +50,34 @@ public class AnswerController {
                 answerBusinessService.createAnswer(answerEntity, questionId, token);
         AnswerResponse answerResponse = new AnswerResponse().id(createdAnswerEntity.getUuid()).status("ANSWER CREATED");
         return new ResponseEntity<AnswerResponse>(answerResponse, HttpStatus.CREATED);
+    }
+
+    /**
+     * edit Answer Content
+     * @param answerEditRequest
+     * @param answerId
+     * @param accessToken
+     * @return ResponseEntity
+     * @throws AuthorizationFailedException
+     * @throws AnswerNotFoundException
+     */
+    @RequestMapping(method = RequestMethod.PUT, path = "/answer/edit/{answerId}",
+            consumes = MediaType.APPLICATION_JSON_UTF8_VALUE, produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
+    public ResponseEntity<AnswerEditResponse> editAnswerContent(final AnswerEditRequest answerEditRequest,
+                                                                @PathVariable("answerId") final String answerId, @RequestHeader("authorization") final String accessToken)
+            throws AuthorizationFailedException, AnswerNotFoundException
+    {
+
+        String token = getAccessToken(accessToken);
+        // Created answer entity for further update
+        AnswerEntity answerEntity = new AnswerEntity();
+        answerEntity.setAnswer(answerEditRequest.getContent());
+        answerEntity.setUuid(answerId);
+
+        // Return response with updated answer entity
+        AnswerEntity updatedAnswerEntity = answerBusinessService.editAnswerContent(answerEntity, token);
+        AnswerEditResponse answerEditResponse = new AnswerEditResponse().id(updatedAnswerEntity.getUuid()).status("ANSWER EDITED");
+        return new ResponseEntity<AnswerEditResponse>(answerEditResponse, HttpStatus.OK);
     }
     /**
      * User can give only Access token or Bearer <accesstoken> as input.
