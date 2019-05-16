@@ -12,6 +12,9 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * RestController annotation specifies that this class represents a REST API(equivalent of @Controller + @ResponseBody)
  * This Controller class help to perform answer operations
@@ -98,6 +101,38 @@ public class AnswerController {
         // Return response
         AnswerDeleteResponse answerDeleteResponse = new AnswerDeleteResponse().id(answerId).status("ANSWER DELETED");
         return new ResponseEntity<AnswerDeleteResponse>(answerDeleteResponse, HttpStatus.OK);
+    }
+
+    /**
+     * get all answers to a question
+     *
+     * @param questionId
+     * @param accessToken
+     * @return RequestMapping
+     * @throws AuthorizationFailedException
+     * @throws InvalidQuestionException
+     */
+    @RequestMapping(method = RequestMethod.GET, path = "/answer/all/{questionId}", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
+    public ResponseEntity<List<AnswerDetailsResponse>> getAllAnswersToQuestion(@PathVariable("questionId") final String questionId,
+                                                                               @RequestHeader("authorization") final String accessToken) throws AuthorizationFailedException, InvalidQuestionException {
+        String token = getAccessToken(accessToken);
+
+        // Get all answers for requested question
+        List<AnswerEntity> allAnswers = answerBusinessService.getAllAnswersToQuestion(questionId, token);
+
+        // Create response
+        List<AnswerDetailsResponse> allAnswersResponse = new ArrayList<AnswerDetailsResponse>();
+
+        allAnswers.forEach(answers -> {
+            AnswerDetailsResponse answerDetailsResponse = new AnswerDetailsResponse()
+                    .answerContent(answers.getAnswer())
+                    .questionContent(answers.getQuestion().getContent())
+                    .id(answers.getUuid());
+            allAnswersResponse.add(answerDetailsResponse);
+        });
+
+        // Return response
+        return new ResponseEntity<List<AnswerDetailsResponse>>(allAnswersResponse, HttpStatus.FOUND);
     }
 
     /**

@@ -16,6 +16,7 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.ZonedDateTime;
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -56,8 +57,8 @@ public class AnswerBusinessService {
     }
 
     /**
-     * @param answerEntity  the first {@code AnswerEntity} object to update stored answer
-     * @param authorization the second {@code String} to check if the access is available.
+     * @param answerEntity
+     * @param authorization
      * @return AnswerEntity object is returned after persisting in the database.
      */
     @Transactional(propagation = Propagation.REQUIRED)
@@ -85,6 +86,13 @@ public class AnswerBusinessService {
         return answerDao.editAnswerContent(answerEntity);
     }
 
+    /**
+     *
+     * @param answerId
+     * @param authorization
+     * @throws AuthorizationFailedException
+     * @throws AnswerNotFoundException
+     */
     @Transactional(propagation = Propagation.REQUIRED)
     public void deleteAnswer(final String answerId, final String authorization) throws AuthorizationFailedException, AnswerNotFoundException {
         UserAuthTokenEntity userAuthEntity = userDao.getUserAuthToken(authorization);
@@ -105,6 +113,33 @@ public class AnswerBusinessService {
         answerDao.userAnswerDelete(answerId);
     }
 
+    /**
+     *
+     * @param questionId
+     * @param authorization
+     * @return
+     * @throws AuthorizationFailedException
+     * @throws InvalidQuestionException
+     */
+    @Transactional(propagation = Propagation.REQUIRED)
+    public List<AnswerEntity> getAllAnswersToQuestion(final String questionId, final String authorization) throws AuthorizationFailedException, InvalidQuestionException {
+        UserAuthTokenEntity userAuthEntity = userDao.getUserAuthToken(authorization);
+        authorizeUser(userAuthEntity, "User is signed out.Sign in first to get the answers");
+
+        // Validate if requested question exist or not
+        if (questionDao.getQuestionById(questionId) == null) {
+            throw new InvalidQuestionException("QUES-001", "The question with entered uuid whose details are to be seen does not exist");
+        }
+
+        return answerDao.getAllAnswersToQuestion(questionId);
+    }
+
+    /**
+     *
+     * @param userAuthEntity
+     * @param log_out_ERROR
+     * @throws AuthorizationFailedException
+     */
     private void authorizeUser(UserAuthTokenEntity userAuthEntity, final String log_out_ERROR) throws AuthorizationFailedException {
         // Validate if user is signed in or not
         if (userAuthEntity == null) {
