@@ -13,7 +13,7 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
-public class SignupBusinessService {
+public class UserBusinessService {
 
     @Autowired
     private AdminBusinessService adminBusinessService;

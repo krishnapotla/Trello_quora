@@ -24,6 +24,11 @@ public class UserDao {
         return userEntity;
     }
 
+    public UserAuthTokenEntity createAuthUser(UserAuthTokenEntity userAuthTokenEntity) {
+        entityManager.persist(userAuthTokenEntity);
+        return userAuthTokenEntity;
+    }
+
     public UserEntity getUser(final String userUuid) {
         try {
             return entityManager.createNamedQuery("userByUuid", UserEntity.class).setParameter("uuid", userUuid)
@@ -69,6 +74,7 @@ public class UserDao {
     }
 
     public void updateUser(final UserEntity updatedUserEntity){
+
         entityManager.merge(updatedUserEntity);
     }
 

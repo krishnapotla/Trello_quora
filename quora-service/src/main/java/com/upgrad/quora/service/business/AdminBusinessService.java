@@ -46,6 +46,7 @@ public class AdminBusinessService {
 
     @Autowired
     private PasswordCryptographyProvider cryptographyProvider;
+
     @Transactional(propagation = Propagation.REQUIRED)
     public UserEntity createUser(final UserEntity userEntity) throws SignUpRestrictedException {
 
