@@ -32,6 +32,7 @@ public class UserController {
     @Autowired
     private UserBusinessService userBusinessService;
 
+    // Signup Method
     @RequestMapping(method = RequestMethod.POST, path = "/user/signup", consumes = MediaType.APPLICATION_JSON_UTF8_VALUE, produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
     public ResponseEntity<SignupUserResponse> signup(final SignupUserRequest signupUserRequest) throws SignUpRestrictedException {
         final UserEntity userEntity = new UserEntity();
@@ -49,6 +50,8 @@ public class UserController {
         userEntity.setSalt("1234abc");
 
         final UserEntity createdUserEntity = userBusinessService.signup(userEntity);
+
+        //Status for successful user creation
         SignupUserResponse signupUserResponse = new SignupUserResponse().id(createdUserEntity.getUuid()).status("USER SUCCESSFULLY REGISTERED");
         return new ResponseEntity<SignupUserResponse>(signupUserResponse, HttpStatus.CREATED);
     }
@@ -57,8 +60,10 @@ public class UserController {
     @Autowired
     private AuthenticationService authenticationService;
 
+    // Signin Method
     @RequestMapping(method = RequestMethod.POST,path = "/user/signin",produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
     public ResponseEntity<SigninResponse> signin(@RequestHeader("authorization") final String authorization) throws AuthenticationFailedException {
+
         byte[] decode= Base64.getDecoder().decode(authorization.split("Basic ")[1]);
 
         String decodedText = new String(decode);
@@ -67,6 +72,7 @@ public class UserController {
         UserAuthTokenEntity userAuthToken = authenticationService.authenticate(decodedArray[0],decodedArray[1]);
         UserEntity user = userAuthToken.getUser();
 
+        // Message for successful signin
         SigninResponse signinResponse = new SigninResponse().id(user.getUuid()).message("SIGNED IN SUCCESSFULLY");
 
         HttpHeaders headers = new HttpHeaders();
@@ -77,11 +83,12 @@ public class UserController {
     }
 
 
+    // Signout method
     @RequestMapping(method=RequestMethod.POST,path="/user/signout",produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
-
     public ResponseEntity<SignoutResponse> signout(@RequestHeader("authorization") final String authorization) throws SignOutRestrictedException {
         final UserEntity userEntity = userBusinessService.signout(authorization);
 
+        //Message for successful signout
         SignoutResponse signoutResponse = new SignoutResponse().id(userEntity.getUuid()).message("SIGNED OUT SUCCESSFULLY");
 
         return new ResponseEntity<SignoutResponse>(signoutResponse,HttpStatus.OK);
@@ -92,150 +99,3 @@ public class UserController {
 
 
 }
-
-//    @RequestMapping(path = "/user/signin", method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
-//    public ResponseEntity<SigninResponse> userSignIn(@RequestHeader("authorization") final String authorization) throws AuthenticationFailedException
-//    {
-//        byte[] decoded = Base64.getDecoder().decode(authorization.split("Basic ")[1]);
-//        String decodedAuth = new String(decoded);
-//        String[] decodedArray = decodedAuth.split(":");
-//        UserAuthTokenEntity userAuthTokenEntity = userBusinessService.authenticateUser(decodedArray[0], decodedArray[1]);
-//        UsersEntity usersEntity = userAuthTokenEntity.getUser();
-//        SigninResponse signinResponse = new SigninResponse().id(userAuthTokenEntity.getUuid()).message("SIGNED IN SUCCESSFULLY");
-//        HttpHeaders headers = new HttpHeaders();
-//        headers.add("access_token", userAuthTokenEntity.getAccessToken());
-//        return new ResponseEntity<SigninResponse>(signinResponse, headers, HttpStatus.OK);
-//    }
-//
-//    @RequestMapping(path = "/user/signout", method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
-//    public ResponseEntity<SignoutResponse> userSignOut(@RequestHeader("authorization") final String authorization) throws SignOutRestrictedException
-//    {
-//        UserAuthTokenEntity userAuthTokenEntity = userBusinessService.signOut(authorization);
-//        UsersEntity usersEntity = userAuthTokenEntity.getUser();
-//        SignoutResponse signoutResponse = new SignoutResponse().id(usersEntity.getUuid()).message("SIGNED OUT SUCCESSFULLY");
-//        return new ResponseEntity<SignoutResponse>(signoutResponse, HttpStatus.OK);
-//    }
-//
-//}
-
-
-
-
-//package org.upgrad.controllers;
-//import org.upgrad.models.User;
-//import org.upgrad.models.UserProfile;
-//import org.upgrad.services.NotificationService;
-//import org.upgrad.services.UserService;
-//import com.google.common.base.Charsets;
-//import com.google.common.hash.Hashing;
-//import org.springframework.beans.factory.annotation.Autowired;
-//import org.springframework.http.HttpStatus;
-//import org.springframework.http.ResponseEntity;
-//import org.springframework.stereotype.Controller;
-//import org.springframework.web.bind.annotation.GetMapping;
-//import org.springframework.web.bind.annotation.PathVariable;
-//import org.springframework.web.bind.annotation.PostMapping;
-//import org.springframework.web.bind.annotation.RequestParam;
-//
-//
-//import javax.servlet.http.HttpSession;
-//import java.util.Date;
-//
-//@Controller
-//public class UserController {
-//    @Autowired
-//    UserService userService;
-//    @Autowired
-//    NotificationService notificationService;
-//
-//    @PostMapping("/api/user/signup")
-//    public ResponseEntity<?> userSignUp(@RequestParam(value = "firstName") String firstName,
-//                                        @RequestParam(value = "lastName", defaultValue = "null") String lastName,
-//                                        @RequestParam(value = "userName") String username,
-//                                        @RequestParam(value = "email") String email,
-//                                        @RequestParam(value = "password") String password,
-//                                        @RequestParam(value = "country") String country,
-//                                        @RequestParam(value = "aboutMe", defaultValue = "null") String aboutMe,
-//                                        @RequestParam(value = "dob") String dob,
-//                                        @RequestParam(value = "contactNumber", defaultValue = "null") String phoneNumber) {
-//        if (userService.findUserByUsername(username) != null) {
-//            return new ResponseEntity<>("Try any other Username, " +
-//                    "this Username has already been taken.", HttpStatus.FORBIDDEN);
-//        }
-//        if (userService.findUserByEmail(email) != null) {
-//            return new ResponseEntity<>("This user has already been registered, " +
-//                    "try with any other emailId.", HttpStatus.FORBIDDEN);
-//        }
-//        String sha256hex = Hashing.sha256()
-//                .hashString(password, Charsets.US_ASCII)
-//                .toString();
-//        userService.addUser(username, sha256hex, email, firstName, lastName, aboutMe, dob, phoneNumber, country);
-//        return new ResponseEntity<>(username + " successfully registered", HttpStatus.OK);
-//    }
-//
-//    @PostMapping("/api/user/login")
-//    public ResponseEntity<?> userSignIn(@RequestParam(value = "userName") String username,
-//                                        @RequestParam(value = "password") String password,
-//                                        HttpSession httpSession) {
-//        String sha256hex = Hashing.sha256()
-//                .hashString(password, Charsets.US_ASCII)
-//                .toString();
-//        String passwordFromDatabase = userService.getPasswordByUsername(username);
-//        if (!passwordFromDatabase.equalsIgnoreCase(sha256hex)) {
-//            return new ResponseEntity<>("Invalid Credentials", HttpStatus.UNAUTHORIZED);
-//        } else if (userService.getRoleByUsername(username).equalsIgnoreCase("admin")) {
-//            User user = userService.findUserByUsername(username);
-//            httpSession.setAttribute("currUser", user);
-//            return new ResponseEntity<>("You have logged in as admin!", HttpStatus.OK);
-//        } else {
-//            User user = userService.findUserByUsername(username);
-//            httpSession.setAttribute("currUser", user);
-//            return new ResponseEntity<>("You have logged in successfully!", HttpStatus.OK);
-//        }
-//    }
-//
-//    @PostMapping("/api/user/logout")
-//    public ResponseEntity<?> userSignOut(HttpSession httpSession) {
-//        if (httpSession.getAttribute("currUser") == null) {
-//            return new ResponseEntity<>("You are currently not logged in", HttpStatus.UNAUTHORIZED);
-//        } else {
-//            httpSession.removeAttribute("currUser");
-//            return new ResponseEntity<>("You have logged out successfully!", HttpStatus.OK);
-//        }
-//    }
-//    @GetMapping("/api/user/userProfile/{userId}")
-//    public ResponseEntity<?> getUserProfile(@PathVariable(value = "userId") int userId, HttpSession httpSession) {
-//        if (httpSession.getAttribute("currUser") == null) {
-//            return new ResponseEntity<>("Please Login first to access this endpoint", HttpStatus.UNAUTHORIZED);
-//        } else {
-//            User user = (User) httpSession.getAttribute("currUser");
-//            UserProfile userProfile = userService.getUserProfile(user.getId());
-//            if (userProfile == null) {
-//                return new ResponseEntity<>("User Profile not found!", HttpStatus.NOT_FOUND);
-//            } else {
-//                return new ResponseEntity<>(userProfile, HttpStatus.OK);
-//            }
-//        }
-//    }
-//        @GetMapping("/api/user/notification/new")
-//    public ResponseEntity<?> getNewNotifications(HttpSession httpSession) {
-//        if (httpSession.getAttribute("currUser") == null) {
-//            return new ResponseEntity<>("Please Login first to access this endpoint!", HttpStatus.UNAUTHORIZED);
-//        } else {
-//            User user = (User) httpSession.getAttribute("currUser");
-//            return new ResponseEntity<>(notificationService.getNewNotifications(user.getId()), HttpStatus.OK);
-//        }
-//    }
-//
-//    @GetMapping("/api/user/notification/all")
-//    public ResponseEntity<?> getAllNotifications(HttpSession httpSession) {
-//        if (httpSession.getAttribute("currUser") == null) {
-//            return new ResponseEntity<>("Please Login first to access this endpoint!", HttpStatus.UNAUTHORIZED);
-//        } else {
-//            User user = (User) httpSession.getAttribute("currUser");
-//            return new ResponseEntity<>(notificationService.getAllNotifications(user.getId()), HttpStatus.OK);
-//        }
-//    }
-//}
-//
-//
