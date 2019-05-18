@@ -26,7 +26,7 @@ public class QuestionBusinessService {
     @Transactional(propagation = Propagation.REQUIRED)
     public QuestionEntity createQuestion(QuestionEntity questionEntity, String accessToken) throws AuthorizationFailedException {
         UserAuthTokenEntity userAuthEntity = userDao.getUserAuthToken(accessToken);
-        authorizeUser(userAuthEntity);
+        authorizeUser(userAuthEntity, "User is signed out.Sign in first to post a question");
 
         questionEntity.setUser(userAuthEntity.getUser());
         return questionDao.createQuestion(questionEntity);
@@ -35,7 +35,7 @@ public class QuestionBusinessService {
     public QuestionEntity editQuestion(final QuestionEntity questionEntity, final String authorizationToken) throws AuthorizationFailedException, InvalidQuestionException {
         UserAuthTokenEntity userAuthEntity = userDao.getUserAuthToken(authorizationToken);
 
-        authorizeUser(userAuthEntity);
+        authorizeUser(userAuthEntity, "User is signed out.Sign in first to edit the question");
 
         // Validate if requested question exist or not
         QuestionEntity existingQuestionEntity = questionDao.getQuestionById(questionEntity.getUuid());
@@ -59,21 +59,21 @@ public class QuestionBusinessService {
     public void deleteQuestion(final String questionId, final String authorization) throws InvalidQuestionException, AuthorizationFailedException {
         UserAuthTokenEntity userAuthEntity = userDao.getUserAuthToken(authorization);
 
-        authorizeUser(userAuthEntity);
+        authorizeUser(userAuthEntity, "User is signed out.Sign in first to delete a question");
         QuestionEntity questionEntity = questionDao.getQuestionById(questionId);
         // Validate if requested question exist or not
         if (questionEntity == null) {
             throw new InvalidQuestionException("QUES-001", "Entered question uuid does not exist");
         }
         // Validate if current user is the owner of requested question or the role of user is admin
-        if (userAuthEntity.getUser().getRole().equals("nonadmin") && !userAuthEntity.getUser().getUuid().equals(questionEntity.getUser().getUuid())) {
+        if (userAuthEntity.getUser().getRole().equals("nonadmin") && userAuthEntity.getUser().getUuid() != questionEntity.getUser().getUuid()) {
             throw new AuthorizationFailedException("ATHR-003", "Only the question owner or admin can delete the question");
         }
 
         questionDao.deleteQuestion(questionEntity);
     }
 
-    private void authorizeUser(UserAuthTokenEntity userAuthEntity) throws AuthorizationFailedException {
+    private void authorizeUser(UserAuthTokenEntity userAuthEntity, final String log_out_ERROR) throws AuthorizationFailedException {
         // Validate if user is signed in or not
         if (userAuthEntity == null) {
             throw new AuthorizationFailedException("ATHR-001", "User has not signed in");
@@ -81,20 +81,20 @@ public class QuestionBusinessService {
 
         // Validate if user has signed out
         if (userAuthEntity.getLogoutAt() != null) {
-            throw new AuthorizationFailedException("ATHR-002", "User is signed out.Sign in first to delete a question");
+            throw new AuthorizationFailedException("ATHR-002", log_out_ERROR);
         }
     }
 
     public List<QuestionEntity> getAllQuestions(String token) throws AuthorizationFailedException {
         UserAuthTokenEntity userAuthEntity = userDao.getUserAuthToken(token);
-        authorizeUser(userAuthEntity);
+        authorizeUser(userAuthEntity, "User is signed out.Sign in first to get all questions");
         return questionDao.getAllQuestions();
     }
 
     public List<QuestionEntity> getAllQuestionsByUser(final String userId, final String authorizationToken) throws AuthorizationFailedException, UserNotFoundException {
         UserAuthTokenEntity userAuthEntity = userDao.getUserAuthToken(authorizationToken);
 
-        authorizeUser(userAuthEntity);
+        authorizeUser(userAuthEntity, "User is signed out.Sign in first to get all questions posted by a specific user");
         // Validate if requested user exist or not
         if (userDao.getUser(userId) == null) {
             throw new UserNotFoundException("USR-001", "User with entered uuid whose question details are to be seen does not exist");
