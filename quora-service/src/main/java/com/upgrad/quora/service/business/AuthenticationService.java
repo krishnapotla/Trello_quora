@@ -22,17 +22,19 @@ public class AuthenticationService {
     @Autowired
     private PasswordCryptographyProvider cryptographyProvider;
 
+    //Service method for authenticaion while signing in
     @Transactional(propagation = Propagation.REQUIRED)
-
     public UserAuthTokenEntity authenticate(final String username, final String password) throws AuthenticationFailedException{
         UserEntity userEntity = userDao.getUserByUserName(username);
 
+        // Check if user name does not exist
         if(userEntity == null) {
             throw new AuthenticationFailedException("ATH-001","This username does not exist");
         }
 
         String encryptedPassword = cryptographyProvider.encrypt(password,userEntity.getSalt());
 
+        //Check if password matches the password-salt stored in the database
         if(encryptedPassword.equals(userEntity.getPassword()))
             {
                 JwtTokenProvider jwtTokenProvider = new JwtTokenProvider(encryptedPassword);
@@ -57,6 +59,7 @@ public class AuthenticationService {
 
     }
 
+    //Method for user logout
     @Transactional(propagation = Propagation.REQUIRED)
     public UserEntity userLogout(final String authorizationToken) throws SignOutRestrictedException {
         UserAuthTokenEntity userAuthEntity = userDao.getUserAuthToken(authorizationToken);
@@ -70,6 +73,8 @@ public class AuthenticationService {
         final ZonedDateTime lastLoginTime = userAuthEntity.getLoginAt();
         final ZonedDateTime lastLogoutTime = userAuthEntity.getLogoutAt();
 
+        // For previously logged out users, check their logged out times
+        // This avoids exceptions during repeated logout calls
         if(lastLogoutTime!=null && lastLogoutTime.isAfter(lastLoginTime)) {
             throw new SignOutRestrictedException("SGR-001", "User is not Signed in");
 
@@ -77,7 +82,7 @@ public class AuthenticationService {
 
         final ZonedDateTime now = ZonedDateTime.now();
 
-
+        //Set the new logout time
         userAuthEntity.setLogoutAt(now);
 
         return userAuthEntity.getUser();
