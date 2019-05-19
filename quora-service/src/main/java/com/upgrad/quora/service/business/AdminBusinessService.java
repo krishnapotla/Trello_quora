@@ -20,6 +20,14 @@ public class AdminBusinessService {
     @Autowired
     private UserDao userDao;
 
+    /**
+     * delete user
+     * @param userUuid
+     * @param authorizationToken
+     * @return
+     * @throws AuthorizationFailedException
+     * @throws UserNotFoundException
+     */
     @Transactional(propagation = Propagation.REQUIRED)
     public UserEntity deleteUser(final String userUuid, final String authorizationToken) throws AuthorizationFailedException,
             UserNotFoundException {
