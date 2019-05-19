@@ -21,7 +21,7 @@ public class UserBusinessService {
     @Autowired
     private UserDao userDao;
 
-
+    // Service method for signup
     @Transactional(propagation = Propagation.REQUIRED)
     public UserEntity signup(UserEntity userEntity) throws SignUpRestrictedException {
         return adminBusinessService.createUser(userEntity);
@@ -30,27 +30,32 @@ public class UserBusinessService {
     @Autowired
     private AuthenticationService authenticationService;
 
+    // Service method for signout
     @Transactional(propagation = Propagation.REQUIRED)
     public UserEntity signout(final String authorizationToken) throws SignOutRestrictedException {
         return authenticationService.userLogout(authorizationToken);
     }
 
+    // Service method to get the user details
     @Transactional(propagation = Propagation.REQUIRED)
     public UserEntity getUser(final String userUuid,final String authorizationToken)  throws AuthorizationFailedException,
             UserNotFoundException {
 
         UserAuthTokenEntity userAuthTokenEntity = userDao.getUserAuthToken(authorizationToken);
 
+        // Check if the user is signed in or not
         if (userAuthTokenEntity == null) {
             throw new AuthorizationFailedException("ATHR-001", "User has not signed in");
         }
 
+        // Check if the user has signed out
         if (userAuthTokenEntity.getLogoutAt() != null) {
             throw new AuthorizationFailedException("ATHR-002", "User is signed out.Sign in first to get user details");
         }
 
         UserEntity userEntity = userDao.getUser(userUuid);
 
+        // Check if the user exists
         if (userEntity == null) {
             throw new UserNotFoundException("USR-001", "User with entered uuid does not exist");
         }

@@ -4,15 +4,12 @@ import com.upgrad.quora.service.dao.UserDao;
 import com.upgrad.quora.service.entity.UserAuthTokenEntity;
 import com.upgrad.quora.service.entity.UserEntity;
 import com.upgrad.quora.service.exception.AuthorizationFailedException;
-import com.upgrad.quora.service.exception.SignOutRestrictedException;
 import com.upgrad.quora.service.exception.SignUpRestrictedException;
 import com.upgrad.quora.service.exception.UserNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.time.ZonedDateTime;
 
 /**
  * This class contains Admin related business operations
@@ -47,23 +44,25 @@ public class AdminBusinessService {
     @Autowired
     private PasswordCryptographyProvider cryptographyProvider;
 
+    //Method for creating a user...used during signup
     @Transactional(propagation = Propagation.REQUIRED)
     public UserEntity createUser(final UserEntity userEntity) throws SignUpRestrictedException {
 
         UserEntity user = userDao.getUserByUserName(userEntity.getUserName());
 
-        //System.out.println(userName);
-
+        // Check if username already exists
         if(user != null) {
             throw new SignUpRestrictedException("SGR-001","Try any other Username, this Username has already been taken");
         }
 
+        // Check if email already exists
         UserEntity userEmail = userDao.getUserByEmail(userEntity.getEmail());
 
         if(userEmail != null) {
             throw new SignUpRestrictedException("SGR-002","This user has already been registered, try with any other emailId");
         }
 
+        //Encrypt password and add salt
         String[] encryptedText = cryptographyProvider.encrypt(userEntity.getPassword());
         userEntity.setSalt(encryptedText[0]);
         userEntity.setPassword(encryptedText[1]);
