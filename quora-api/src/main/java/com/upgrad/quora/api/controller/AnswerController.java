@@ -132,7 +132,7 @@ public class AnswerController {
         });
 
         // Return response
-        return new ResponseEntity<List<AnswerDetailsResponse>>(allAnswersResponse, HttpStatus.FOUND);
+        return new ResponseEntity<List<AnswerDetailsResponse>>(allAnswersResponse, HttpStatus.OK);
     }
 
     /**
